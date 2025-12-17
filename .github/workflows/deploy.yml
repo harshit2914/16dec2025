@@ -1,0 +1,52 @@
+name: Docker CI-CD Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1️⃣ Code checkout
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # 2️⃣ Docker Hub login
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    # 3️⃣ Build & Push Backend Image
+    - name: Build and Push Backend
+      run: |
+        docker build -t harshit2914/backend:latest ./backend
+        docker push harshit2914/backend:latest
+
+    # 4️⃣ Build & Push Frontend Image
+    - name: Build and Push Frontend
+      run: |
+        docker build -t harshit2914/frontend:latest ./frontend
+        docker push harshit2914/frontend:latest
+
+    # 5️⃣ SSH into Frontend EC2 (Bastion) & Deploy
+    - name: Deploy on EC2
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_KEY }}
+        script: |
+          docker pull harshit2914/backend:latest
+          docker stop backend || true
+          docker rm backend || true
+          docker run -d --name backend -p 3000:3000 harshit2914/backend:latest
+
+          docker pull harshit2914/frontend:latest
+          docker stop frontend || true
+          docker rm frontend || true
+          docker run -d --name frontend -p 80:80 harshit2914/frontend:latest
