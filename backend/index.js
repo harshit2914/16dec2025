@@ -4,6 +4,7 @@ const cors = require("cors");
 app.use(cors());
 
 app.get("/task", (req, res) => {
+  console.log("Request aayi /task se");
   res.json({ message: "Your task is completed" });
 });
 
