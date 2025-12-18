@@ -4,7 +4,7 @@ function App() {
   const [msg, setMsg] = useState("");
 
   const callBackend = async () => {
-    const res = await fetch("/task");
+    const res = await fetch("http://10.0.2.116:3000/task");
 
 
     const data = await res.json();
