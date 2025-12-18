@@ -42,12 +42,13 @@ jobs:
         key: ${{ secrets.EC2_KEY }}
         script: |
           # --- PART 1: Deploy Backend on Private EC2 via SSH Jump ---
-          # Hum variable use kar rahe hain jo GitHub Secret se aayega
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.BACKEND_PRIVATE_IP }} << 'EOF'
+          # Hum Frontend ke andar se Backend par SSH kar rahe hain
+          ssh -o StrictHostKeyChecking=no -tt ec2-user@${{ secrets.BACKEND_PRIVATE_IP }} << 'EOF'
             docker pull harshit2914/backend:latest
             docker stop backend || true
             docker rm backend || true
             docker run -d --name backend -p 3000:3000 harshit2914/backend:latest
+            exit
           EOF
 
           # --- PART 2: Deploy Frontend on Public EC2 ---
