@@ -33,32 +33,34 @@ jobs:
         docker build -t harshit2914/frontend:latest ./frontend
         docker push harshit2914/frontend:latest
 
-    # 5️⃣ Deploying to AWS (Frontend & Jump to Private Backend)
-    - name: Deploy on EC2
+    # 5️⃣ Deploy Backend on Private EC2 (Via Public Bastion/Jump Host)
+    - name: Deploy Backend on Private EC2
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.BACKEND_PRIVATE_IP }}
+        username: ec2-user
+        key: ${{ secrets.EC2_KEY }}             # Dono ki key same hai isliye yahi chalegi
+        proxy_host: ${{ secrets.EC2_HOST }}      # Public EC2 IP
+        proxy_username: ${{ secrets.EC2_USER }}
+        proxy_key: ${{ secrets.EC2_KEY }}       # Jump host ke liye bhi same key
+        script: |
+          docker pull harshit2914/backend:latest
+          docker stop backend || true
+          docker rm backend || true
+          docker run -d --name backend -p 3000:3000 harshit2914/backend:latest
+
+    # 6️⃣ Deploy Frontend on Public EC2
+    - name: Deploy Frontend on Public EC2
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_KEY }}
         script: |
-          # --- PART 1: Deploy Backend on Private EC2 via SSH Jump ---
-          # Hum Frontend ke andar se Backend par SSH kar rahe hain
-          ssh -o StrictHostKeyChecking=no -tt ec2-user@${{ secrets.BACKEND_PRIVATE_IP }} << 'EOF'
-            docker pull harshit2914/backend:latest
-            docker stop backend || true
-            docker rm backend || true
-            docker run -d --name backend -p 3000:3000 harshit2914/backend:latest
-            exit
-          EOF
-
-          # --- PART 2: Deploy Frontend on Public EC2 ---
           docker pull harshit2914/frontend:latest
           docker stop frontend || true
           docker rm frontend || true
           docker run -d --name frontend -p 80:80 harshit2914/frontend:latest
-
-
-
 
 # name: Docker CI-CD Deploy
 
@@ -95,7 +97,7 @@ jobs:
 #         docker build -t harshit2914/frontend:latest ./frontend
 #         docker push harshit2914/frontend:latest
 
-#     # 5️⃣ SSH into Frontend EC2 (Bastion) & Deploy
+#     # 5️⃣ Deploying to AWS (Frontend & Jump to Private Backend)
 #     - name: Deploy on EC2
 #       uses: appleboy/ssh-action@v1.0.3
 #       with:
@@ -103,12 +105,21 @@ jobs:
 #         username: ${{ secrets.EC2_USER }}
 #         key: ${{ secrets.EC2_KEY }}
 #         script: |
-#           docker pull harshit2914/backend:latest
-#           docker stop backend || true
-#           docker rm backend || true
-#           docker run -d --name backend -p 3000:3000 harshit2914/backend:latest
+#           # --- PART 1: Deploy Backend on Private EC2 via SSH Jump ---
+#           # Hum Frontend ke andar se Backend par SSH kar rahe hain
+#           ssh -o StrictHostKeyChecking=no -tt ec2-user@${{ secrets.BACKEND_PRIVATE_IP }} << 'EOF'
+#             docker pull harshit2914/backend:latest
+#             docker stop backend || true
+#             docker rm backend || true
+#             docker run -d --name backend -p 3000:3000 harshit2914/backend:latest
+#             exit
+#           EOF
 
+#           # --- PART 2: Deploy Frontend on Public EC2 ---
 #           docker pull harshit2914/frontend:latest
 #           docker stop frontend || true
 #           docker rm frontend || true
 #           docker run -d --name frontend -p 80:80 harshit2914/frontend:latest
+
+
+
