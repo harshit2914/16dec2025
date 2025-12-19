@@ -4,8 +4,8 @@ function App() {
   const [msg, setMsg] = useState("");
 
   const callBackend = async () => {
-    // const res = await fetch("http://10.0.2.208:3000/task");
-    const res = await fetch("http://98.93.237.147:3000/task");
+    const res = await fetch("http://10.0.2.26:3000/task");
+    // const res = await fetch("http://98.93.237.147:3000/task");
 
 
     const data = await res.json();
