@@ -10,57 +10,118 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1️⃣ Code checkout
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # 2️⃣ Docker Hub login
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    # 3️⃣ Build & Push Backend Image
-    - name: Build and Push Backend
+    - name: Build and Push Images
       run: |
         docker build -t harshit2914/backend:latest ./backend
         docker push harshit2914/backend:latest
-
-    # 4️⃣ Build & Push Frontend Image
-    - name: Build and Push Frontend
-      run: |
         docker build -t harshit2914/frontend:latest ./frontend
         docker push harshit2914/frontend:latest
 
-    # 5️⃣ Deploy Backend on Private EC2 (Via Public Bastion/Jump Host)
+    # 1️⃣ Deploy Backend (Private EC2) via Proxy
     - name: Deploy Backend on Private EC2
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.BACKEND_PRIVATE_IP }}
         username: ec2-user
-        key: ${{ secrets.EC2_KEY }}             # Dono ki key same hai isliye yahi chalegi
-        proxy_host: ${{ secrets.EC2_HOST }}      # Public EC2 IP
-        proxy_username: ${{ secrets.EC2_USER }}
-        proxy_key: ${{ secrets.EC2_KEY }}       # Jump host ke liye bhi same key
+        key: ${{ secrets.EC2_KEY }}
+        proxy_host: ${{ secrets.EC2_HOST }}
+        proxy_username: ec2-user
+        proxy_key: ${{ secrets.EC2_KEY }}
+        command_timeout: 15m # Pulling ke liye extra time
         script: |
-          docker pull harshit2914/backend:latest
-          docker stop backend || true
-          docker rm backend || true
-          docker run -d --name backend -p 3000:3000 harshit2914/backend:latest
+          sudo docker pull harshit2914/backend:latest
+          sudo docker stop backend || true
+          sudo docker rm backend || true
+          sudo docker run -d --name backend -p 3000:3000 harshit2914/backend:latest
 
-    # 6️⃣ Deploy Frontend on Public EC2
+    # 2️⃣ Deploy Frontend (Public EC2)
     - name: Deploy Frontend on Public EC2
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
+        username: ec2-user
         key: ${{ secrets.EC2_KEY }}
         script: |
-          docker pull harshit2914/frontend:latest
-          docker stop frontend || true
-          docker rm frontend || true
-          docker run -d --name frontend -p 80:80 harshit2914/frontend:latest
+          sudo docker pull harshit2914/frontend:latest
+          sudo docker stop frontend || true
+          sudo docker rm frontend || true
+          sudo docker run -d --name frontend -p 80:80 harshit2914/frontend:latest
+
+
+
+
+# name: Docker CI-CD Deploy
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     # 1️⃣ Code checkout
+#     - name: Checkout code
+#       uses: actions/checkout@v3
+
+#     # 2️⃣ Docker Hub login
+#     - name: Login to Docker Hub
+#       uses: docker/login-action@v3
+#       with:
+#         username: ${{ secrets.DOCKER_USERNAME }}
+#         password: ${{ secrets.DOCKER_PASSWORD }}
+
+#     # 3️⃣ Build & Push Backend Image
+#     - name: Build and Push Backend
+#       run: |
+#         docker build -t harshit2914/backend:latest ./backend
+#         docker push harshit2914/backend:latest
+
+#     # 4️⃣ Build & Push Frontend Image
+#     - name: Build and Push Frontend
+#       run: |
+#         docker build -t harshit2914/frontend:latest ./frontend
+#         docker push harshit2914/frontend:latest
+
+#     # 5️⃣ Deploy Backend on Private EC2 (Via Public Bastion/Jump Host)
+#     - name: Deploy Backend on Private EC2
+#       uses: appleboy/ssh-action@v1.0.3
+#       with:
+#         host: ${{ secrets.BACKEND_PRIVATE_IP }}
+#         username: ec2-user
+#         key: ${{ secrets.EC2_KEY }}             # Dono ki key same hai isliye yahi chalegi
+#         proxy_host: ${{ secrets.EC2_HOST }}      # Public EC2 IP
+#         proxy_username: ${{ secrets.EC2_USER }}
+#         proxy_key: ${{ secrets.EC2_KEY }}       # Jump host ke liye bhi same key
+#         script: |
+#           docker pull harshit2914/backend:latest
+#           docker stop backend || true
+#           docker rm backend || true
+#           docker run -d --name backend -p 3000:3000 harshit2914/backend:latest
+
+#     # 6️⃣ Deploy Frontend on Public EC2
+#     - name: Deploy Frontend on Public EC2
+#       uses: appleboy/ssh-action@v1.0.3
+#       with:
+#         host: ${{ secrets.EC2_HOST }}
+#         username: ${{ secrets.EC2_USER }}
+#         key: ${{ secrets.EC2_KEY }}
+#         script: |
+#           docker pull harshit2914/frontend:latest
+#           docker stop frontend || true
+#           docker rm frontend || true
+#           docker run -d --name frontend -p 80:80 harshit2914/frontend:latest
 
 # name: Docker CI-CD Deploy
 
