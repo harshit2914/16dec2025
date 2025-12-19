@@ -5,7 +5,7 @@ function App() {
 
   const callBackend = async () => {
     // const res = await fetch("http://10.0.2.208:3000/task");
-    const res = await fetch("http://34.205.144.174:3000/task");
+    const res = await fetch("http://98.93.237.147:3000/task");
 
 
     const data = await res.json();
